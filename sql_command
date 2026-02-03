@@ -1,0 +1,160 @@
+CREATE TABLE University (
+    University_ID NUMBER PRIMARY KEY,
+    Name VARCHAR2(100) NOT NULL
+);
+
+CREATE TABLE MyDepartment (
+    Dept_ID NUMBER PRIMARY KEY,
+    Dept_Name VARCHAR2(100) NOT NULL
+);
+
+CREATE TABLE Gender (
+    Gender_ID NUMBER PRIMARY KEY,
+    Gender_Name VARCHAR2(20) NOT NULL
+);
+
+CREATE TABLE MyEmployee (
+    ID_Number NUMBER PRIMARY KEY,
+    LAST_NAME VARCHAR2(50) NOT NULL,
+    FIRST_NAME VARCHAR2(50) NOT NULL,
+    HIRE_DATE DATE DEFAULT SYSDATE,
+    USERID NUMBER UNIQUE,
+    SALARY NUMBER CHECK (SALARY > 290),
+    DEPT_ID NUMBER,
+    Gender_ID NUMBER,
+    University_ID NUMBER,
+    EMP_IMAGE BLOB,
+    CONSTRAINT fk_dept FOREIGN KEY (DEPT_ID) REFERENCES MyDepartment(Dept_ID),
+    CONSTRAINT fk_gender FOREIGN KEY (Gender_ID) REFERENCES Gender(Gender_ID),
+    CONSTRAINT fk_uni FOREIGN KEY (University_ID) REFERENCES University(University_ID)
+);
+
+
+
+INSERT INTO MyDepartment VALUES (10, 'IT');
+INSERT INTO MyDepartment VALUES (20, 'Human Resources');
+INSERT INTO MyDepartment VALUES (30, 'Sales');
+
+INSERT INTO Gender VALUES (1, 'Male');
+INSERT INTO Gender VALUES (2, 'Female');
+
+INSERT INTO University VALUES (1, 'University of Jordan');
+INSERT INTO University VALUES (2, 'PSUT');
+
+INSERT INTO MyEmployee (ID_Number, LAST_NAME, FIRST_NAME, HIRE_DATE, USERID, SALARY, DEPT_ID, Gender_ID, University_ID)
+VALUES (1, 'Tiger', 'SCOTT', TO_DATE('1987-09-09', 'YYYY-MM-DD'), 1001, 3000, 10, 1, 1);
+
+-- الموظف Ahmad (تم تعيينه قبل SCOTT)
+INSERT INTO MyEmployee (ID_Number, LAST_NAME, FIRST_NAME, HIRE_DATE, USERID, SALARY, DEPT_ID, Gender_ID, University_ID)
+VALUES (2, 'Ali', 'Ahmad', TO_DATE('1980-10-10', 'YYYY-MM-DD'), 1002, 2800, 10, 1, 2);
+
+-- الموظف Rami (تم تعيينه قبل SCOTT)
+INSERT INTO MyEmployee (ID_Number, LAST_NAME, FIRST_NAME, HIRE_DATE, USERID, SALARY, DEPT_ID, Gender_ID, University_ID)
+VALUES (3, 'Hassan', 'Rami', TO_DATE('1986-05-24', 'YYYY-MM-DD'), 1003, 3200, 20, 1, 1);
+
+-- موظف إضافي (تم تعيينه بعد SCOTT لاختبار الدالة Q5)
+INSERT INTO MyEmployee (ID_Number, LAST_NAME, FIRST_NAME, HIRE_DATE, USERID, SALARY, DEPT_ID, Gender_ID, University_ID)
+VALUES (4, 'Omar', 'Zaid', TO_DATE('2020-01-01', 'YYYY-MM-DD'), 1004, 3500, 10, 1, 2);
+
+-- موظف مبيعات (Sales) لاختبار استثناء Q3
+INSERT INTO MYEMPLOYEE
+VALUES (5, 'Khaled', 'Sami', TO_DATE('2021-03-15', 'YYYY-MM-DD'), 1005, 5000, 30, 1, 1);
+
+COMMIT;
+
+SELECT GENDER_ID FROM GENDER;
+
+SELECT 
+  e.FIRST_NAME  ||' '|| e.LAST_NAME AS "Employee_Name",
+  e.SALARY,
+  d.DEPT_NAME ,
+  g.GENDER_NAME ,
+  u.Name  as University_name
+FROM MyEmployee e
+LEFT JOIN MyDepartment d ON e.DEPT_ID = d.Dept_ID
+LEFT JOIN Gender g ON e.Gender_ID = g.Gender_ID
+LEFT JOIN University u ON e.University_ID = u.UNIVERSITY_ID;
+
+ALTER TABLE MyEmployee ADD manager_ID number ;
+alter table MyEmployee DROP COLUMN manager_ID;
+
+
+COMMIT;
+
+update MYEMPLOYEE SET UNIVERSITY_ID = 4 where FIRST_NAME='Rami';
+
+select * from UNIVERSITY;
+
+SELECT
+ e.FIRST_NAME ||' '|| e.LAST_NAME as Employee_Name,
+ e.SALARY,
+ mydepartment.dept_name as Department_name,
+ m.FIRST_NAME ||' '|| m.LAST_NAME as manager_Name,
+ GENDER.GENDER_NAME,
+ university.Name as Uuniversity_name
+FROM MYEMPLOYEE e
+LEFT JOIN MYDEPARTMENT ON MYDEPARTMENT.DEPT_ID  = e.DEPT_ID
+LEFT JOIN MYEMPLOYEE m ON e.MANAGER_ID = m.ID_NUMBER
+LEFT JOIN GENDER on GENDER.GENDER_ID = e.GENDER_ID
+LEFT JOIN university ON university.UNIVERSITY_ID = e.UNIVERSITY_ID;
+
+COMMIT;
+
+select table_name from USER_TABLES;
+
+SELECT mydepartment.dept_name ,
+sum(MYEMPLOYEE.SALARY) as "total monthly salary"
+from  MYDEPARTMENT 
+LEFT JOIN MYEMPLOYEE ON MYEMPLOYEE.DEPT_ID=mydepartment.dept_ID
+where mydepartment.dept_name <> 'Sales'
+group by mydepartment.dept_name
+HAVING SUM(MYEMPLOYEE.SALARY) > 2500;
+
+select FIRST_NAME || ' ' || LAST_NAME as Employee_name,
+HIRE_DATE
+FROM MYEMPLOYEE
+where HIRE_DATE > (select e.HIRE_DATE from MYEMPLOYEE e where e.FIRST_NAME = 'SCOTT');
+
+select salary * 12 ANNUAL_SALARY FROM MYEMPLOYEE;
+
+
+
+CREATE OR replace FUNCTION F_HR_QUERY 
+RETURN SYS_REFCURSOR 
+IS 
+    v_pnt SYS_REFCURSOR ;
+BEGIN
+    OPEN v_pnt FOR 
+        select FIRST_NAME || ' ' || LAST_NAME as Employee_name,
+HIRE_DATE
+FROM MYEMPLOYEE
+where HIRE_DATE > (select e.HIRE_DATE from MYEMPLOYEE e where e.FIRST_NAME = 'SCOTT');
+
+
+    RETURN v_pnt;
+END;
+/
+
+VARIABLE my_rc REFCURSOR;
+EXEC :my_rc := F_HR_QUERY;
+PRINT my_rc;
+
+create table  MyEmployee_update as select * from MYEMPLOYEE where 0=1 ;
+
+SELECT * from MYEMPLOYEE;
+select * from MYEMPLOYEE_UPDATE;
+
+CREATE OR REPLACE PROCEDURE P_COPY_EMPLOYEE
+IS
+BEGIN
+  INSERT INTO MyEmployee_update
+  SELECT * FROM MyEmployee;
+
+  COMMIT;
+END;
+/
+
+EXEC P_COPY_EMPLOYEE;
+
+
+
