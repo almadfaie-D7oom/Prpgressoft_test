@@ -1,4 +1,4 @@
-CREATE TABLE University github(
+CREATE TABLE University github-updates(
     University_ID NUMBER PRIMARY KEY,
     Name VARCHAR2(100) NOT NULL
 );
